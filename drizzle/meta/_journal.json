@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1763587963750,
+      "tag": "0000_true_bug",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1763759737538,
+      "tag": "0001_cultured_thing",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1763858903437,
+      "tag": "0002_outgoing_blockbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1763932122290,
+      "tag": "0003_known_wild_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1765066208802,
+      "tag": "0004_white_earthquake",
+      "breakpoints": true
+    }
+  ]
+}
