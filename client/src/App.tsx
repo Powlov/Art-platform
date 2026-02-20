@@ -89,6 +89,7 @@ const CertificationExpertise = lazy(() => import("./pages/CertificationExpertise
 const AIPricingEngine = lazy(() => import("./pages/AIPricingEngine"));
 const KnowledgeBase = lazy(() => import("./pages/KnowledgeBase"));
 const ARTNews = lazy(() => import("./pages/ARTNews"));
+const MobileApp = lazy(() => import("./pages/MobileApp"));
 const SubscriptionPlans = lazy(() => import("./pages/SubscriptionPlans"));
 const ServicesMarketplace = lazy(() => import("./pages/ServicesMarketplace"));
 
@@ -145,6 +146,7 @@ function Router() {
         <Route path={"/ai-pricing"} component={AIPricingEngine} />
         <Route path={"/knowledge-base"} component={KnowledgeBase} />
         <Route path={"/news"} component={ARTNews} />
+        <Route path={"/mobile-app"} component={MobileApp} />
         <Route path={"/subscription"} component={SubscriptionPlans} />
         <Route path={"/services"} component={ServicesMarketplace} />
         <Route path={"/artworks/submit"} component={ArtworkSubmission} />
