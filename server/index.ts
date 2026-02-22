@@ -2,6 +2,8 @@ import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { appRouter } from './routes/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +11,23 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // Middleware
+  app.use(express.json());
+
+  // tRPC API endpoint
+  app.use(
+    '/api/trpc',
+    trpcExpress.createExpressMiddleware({
+      router: appRouter,
+      createContext: () => ({}), // Simple context for now
+    })
+  );
+
+  // API endpoints for Transaction-Led Core (REST fallback)
+  app.get('/api/core/health', (_req, res) => {
+    res.json({ status: 'ok', modules: ['Graph Trust', 'ML-Valuation', 'Anti-Fraud', 'Banking API', 'Asset Management'] });
+  });
 
   // Serve static files from dist/public in production
   const staticPath =
@@ -27,6 +46,8 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    console.log(`tRPC API available at http://localhost:${port}/api/trpc`);
+    console.log(`Transaction-Led Core API available at http://localhost:${port}/api/core`);
   });
 }
 

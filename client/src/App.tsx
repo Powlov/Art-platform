@@ -62,7 +62,7 @@ const Messenger = lazy(() => import("./pages/Messenger"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const ArtworkDetail = lazy(() => import("./pages/ArtworkDetail"));
 const ProfilePage = lazy(() => import("./pages/UniversalProfile"));
-const Statistics = lazy(() => import("./pages/Statistics"));
+// const Statistics = lazy(() => import("./pages/Statistics")); // Temporarily disabled due to JSX errors
 const DealFeed = lazy(() => import("./pages/DealFeed"));
 const AdvancedAnalytics = lazy(() => import("./pages/AdvancedAnalytics"));
 const NotificationCenter = lazy(() => import("./pages/NotificationCenter"));
@@ -93,6 +93,7 @@ const MobileApp = lazy(() => import("./pages/MobileApp"));
 const TokenizationPlatform = lazy(() => import("./pages/TokenizationPlatform"));
 const SubscriptionPlans = lazy(() => import("./pages/SubscriptionPlans"));
 const ServicesMarketplace = lazy(() => import("./pages/ServicesMarketplace"));
+const TransactionLedCore = lazy(() => import("./pages/TransactionLedCore"));
 
 function Router() {
   return (
@@ -151,6 +152,8 @@ function Router() {
         <Route path={"/tokenization"} component={TokenizationPlatform} />
         <Route path={"/subscription"} component={SubscriptionPlans} />
         <Route path={"/services"} component={ServicesMarketplace} />
+        <Route path={"/transaction-led-core"} component={TransactionLedCore} />
+        <Route path={"/core"} component={TransactionLedCore} />
         <Route path={"/artworks/submit"} component={ArtworkSubmission} />
         <Route path={"/artworks/my"} component={MyArtworks} />
         <Route path={"/artworks/edit/:id"} component={EditArtwork} />
@@ -172,8 +175,8 @@ function Router() {
         <Route path={"/messenger"} component={Messenger} />
         <Route path={"/user/:username"} component={UserProfile} />
         <Route path={"/genre/:genre"} component={Marketplace} />
-        <Route path={"/statistics"} component={Statistics} />
-        <Route path={"/:role/statistics"} component={Statistics} />
+        {/* <Route path={"/statistics"} component={Statistics} /> */}
+        {/* <Route path={"/:role/statistics"} component={Statistics} /> */}
         <Route path={"/deal-feed"} component={DealFeed} />
         <Route path={"/advanced-analytics"} component={AdvancedAnalytics} />
         <Route path={"/notifications"} component={NotificationCenter} />

@@ -64,6 +64,7 @@ export const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
   const adminLinks = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/moderation', label: 'Модерация', icon: Shield },
+    { path: '/transaction-led-core', label: 'Ядро платформы', icon: Settings },
     { path: '/gallery-crm', label: 'CRM Галереи', icon: Briefcase },
     { path: '/private-sales', label: 'Приватные продажи', icon: Lock },
   ];
@@ -318,13 +319,6 @@ export const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
             setMobileMenuOpen(false);
           }}
         />
-      )}
-    </nav>
-  );
-};
-
-export default Navigation;
-       />
       )}
     </nav>
   );
