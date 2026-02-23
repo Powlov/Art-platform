@@ -1,9 +1,10 @@
 module.exports = {
   apps: [
     {
-      name: 'art-bank-market',
-      script: 'npm',
-      args: 'run dev',
+      name: 'art-bank-server',
+      script: 'npx',
+      args: 'tsx watch server/_core/index.ts',
+      cwd: '/home/user/webapp',
       env: {
         NODE_ENV: 'development',
         PORT: 3000
