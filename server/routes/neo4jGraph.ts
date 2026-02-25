@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { publicProcedure, router } from '../_core/trpc';
 import { TRPCError } from '@trpc/server';
-import { neo4jService } from '../services/neo4jGraphService';
-import { redisCache } from '../services/redisCacheService';
+// Emulated version for sandbox (no Docker)
+import { getGraphService } from '../services/neo4jGraphServiceEmulated';
 
 /**
- * Enhanced Transaction-Led Core Router with Neo4j Integration
+ * Enhanced Transaction-Led Core Router with Neo4j Integration (Emulated)
  */
 
 export const neo4jGraphRouter = router({
@@ -31,10 +31,18 @@ export const neo4jGraphRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        const artist = await neo4jService.createArtist(input);
-
-        // Invalidate cache
-        await redisCache.delPattern(`artist:${input.id}:*`);
+        const graphService = await getGraphService();
+        const artist = await graphService.createNode({
+          ...input,
+          type: 'artist',
+          trustScore: input.trustScore || 85,
+          verified: input.verified || false,
+          metadata: {
+            birthYear: input.birthYear,
+            nationality: input.nationality,
+            artMovement: input.artMovement
+          }
+        });
 
         return {
           success: true,

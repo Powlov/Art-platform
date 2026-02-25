@@ -901,6 +901,87 @@ export const transactionLedCoreRouter = router({
     }),
 
   // ==========================================
+  // ML VALUATION ENGINE - PYTHON SERVICE INTEGRATION
+  // ==========================================
+  calculateMLFairValue: publicProcedure
+    .input(
+      z.object({
+        artworkId: z.string(),
+        title: z.string(),
+        artistName: z.string(),
+        baseValue: z.number(),
+        events: z.array(
+          z.object({
+            event_type: z.string(),
+            artist_impact: z.number(),
+            segment_impact: z.number(),
+            collector_impact: z.number(),
+            is_direct_sale: z.boolean(),
+            previous_price: z.number(),
+            timestamp: z.string(),
+            description: z.string(),
+          })
+        ).optional(),
+        artistReputation: z.number().optional(),
+        marketDemand: z.number().optional(),
+        historicalSalesCount: z.number().optional(),
+        exhibitionCount: z.number().optional(),
+        conditionScore: z.number().optional(),
+        provenanceVerified: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        // Call Python ML service
+        const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+        const response = await fetch(`${ML_SERVICE_URL}/api/valuation/calculate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            artwork_id: input.artworkId,
+            title: input.title,
+            artist_name: input.artistName,
+            base_value: input.baseValue,
+            events: input.events || [],
+            artist_reputation: input.artistReputation || 0.5,
+            market_demand: input.marketDemand || 0.5,
+            historical_sales_count: input.historicalSalesCount || 0,
+            exhibition_count: input.exhibitionCount || 0,
+            condition_score: input.conditionScore || 0.8,
+            provenance_verified: input.provenanceVerified || false,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`ML service error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error: any) {
+        console.error('[ML Valuation] Error:', error.message);
+        // Fallback to mock data if ML service unavailable
+        return {
+          success: false,
+          error: error.message,
+          fallback: {
+            artwork_id: input.artworkId,
+            title: input.title,
+            artist: input.artistName,
+            base_value: input.baseValue,
+            fair_value: input.baseValue * 1.05,
+            confidence: 75,
+            trend: 'stable',
+            factors: [],
+          },
+        };
+      }
+    }),
+
+  // ==========================================
   // SYSTEM METRICS
   // ==========================================
   getSystemMetrics: publicProcedure.query(async () => {
@@ -931,7 +1012,7 @@ export const transactionLedCoreRouter = router({
       },
       bankingAPI: {
         connectedBanks: 12,
-        activeLo ans: 342,
+        activeLoans: 342,
         totalLoanVolume: 1250000000,
         avgLTV: 64.5,
         uptime: 99.99,
