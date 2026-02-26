@@ -47,6 +47,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navigation from '@/components/Navigation';
 import Header from '@/components/Header';
+import MLValuationCalculator from '@/components/MLValuationCalculator';
+import GraphTrustProvenanceViewer from '@/components/GraphTrustProvenanceViewer';
 
 interface CoreModule {
   id: string;
@@ -574,6 +576,9 @@ const TransactionLedCore: React.FC = () => {
 
           {/* Graph Trust Tab */}
           <TabsContent value="graph-trust" className="space-y-6">
+            {/* Interactive Provenance Chain Viewer */}
+            <GraphTrustProvenanceViewer />
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -669,11 +674,15 @@ const TransactionLedCore: React.FC = () => {
 
           {/* ML-Valuation Tab */}
           <TabsContent value="ml-valuation" className="space-y-6">
+            {/* Interactive ML Valuation Calculator */}
+            <MLValuationCalculator />
+
+            {/* Historical ML Valuations */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Brain className="w-5 h-5" />
-                  ML-оценки в реальном времени
+                  Исторические ML-оценки
                 </CardTitle>
               </CardHeader>
               <CardContent>
