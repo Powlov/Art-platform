@@ -49,6 +49,8 @@ import Navigation from '@/components/Navigation';
 import Header from '@/components/Header';
 import MLValuationCalculator from '@/components/MLValuationCalculator';
 import GraphTrustProvenanceViewer from '@/components/GraphTrustProvenanceViewer';
+import NetworkGraphVisualization from '@/components/NetworkGraphVisualization';
+import FraudDetectionDashboard from '@/components/FraudDetectionDashboard';
 
 interface CoreModule {
   id: string;
@@ -670,6 +672,9 @@ const TransactionLedCore: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Network Graph Visualization */}
+            <NetworkGraphVisualization />
           </TabsContent>
 
           {/* ML-Valuation Tab */}
@@ -750,15 +755,8 @@ const TransactionLedCore: React.FC = () => {
 
           {/* Anti-Fraud Tab */}
           <TabsContent value="anti-fraud" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Оповещения системы защиты
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+            {/* Fraud Detection Dashboard */}
+            <FraudDetectionDashboard />
                   {fraudAlerts.map((alert, index) => (
                     <motion.div
                       key={alert.id}
