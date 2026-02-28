@@ -1,4 +1,112 @@
-# Changelog - ART BANK Platform v3.7
+# Changelog - ART BANK Platform v3.8
+
+## [v3.8.0] - 2026-02-28
+
+### 🔗 Full tRPC API Integration
+
+#### **Major Updates**
+- **NetworkGraphVisualization** (18 KB, 550 lines)
+  - ✅ Integrated `trpc.core.getGraphNodes.useQuery()` API
+  - Loading state with spinner animation
+  - Error handling with retry button
+  - Real-time data fetch (limit: 50 nodes)
+  - Filter by type: artist, gallery, artwork, collector, transaction
+  - Auto-refresh capability
+  - Badge showing node count
+  - Empty state fallback
+
+- **FraudDetectionDashboard** (18 KB, 500 lines)
+  - ✅ Integrated `trpc.core.getFraudAlerts.useQuery()` API
+  - ✅ Integrated `trpc.core.getFraudStatistics.useQuery()` API
+  - Auto-refresh every 30 seconds (configurable)
+  - Filter by severity (all, critical, high, medium, low)
+  - Filter by status (active, investigating, resolved, false_positive)
+  - Real-time notification system (browser notifications ready)
+  - Loading state with spinner
+  - Error handling with retry
+  - Dynamic stats cards update
+
+- **BankingIntegrationDashboard** (17.7 KB, 470 lines) - NEW COMPONENT
+  - ✅ Integrated `trpc.core.getBankingIntegrations.useQuery()` API
+  - ✅ Integrated `trpc.core.getBankingStatistics.useQuery()` API
+  - ✅ Integrated `trpc.core.getBankingLoans.useQuery()` API
+  - Auto-refresh every 60 seconds
+  - Stats cards: Connected Banks, Active Loans, Total Loan Volume, Average LTV
+  - Bank connections grid with status indicators
+  - Active loans table with LTV progress bars
+  - Filter by bank and risk level
+  - Visual risk indicators (colors: green=low, yellow=medium, orange=high, red=critical)
+  - Margin call threshold display
+  - Next valuation dates
+  - Currency formatting (RUB)
+
+#### **API Endpoints Integrated**
+```typescript
+// Graph Trust Module
+trpc.core.getGraphNodes.useQuery({ limit: 50, type?: string })
+
+// Fraud Detection Module
+trpc.core.getFraudAlerts.useQuery({ 
+  severity?: 'critical' | 'high' | 'medium' | 'low',
+  status?: 'active' | 'investigating' | 'resolved' | 'false_positive',
+  limit: 50 
+})
+trpc.core.getFraudStatistics.useQuery()
+
+// Banking API Module
+trpc.core.getBankingIntegrations.useQuery({ limit: 20 })
+trpc.core.getBankingStatistics.useQuery()
+trpc.core.getBankingLoans.useQuery({ 
+  bankId?: string, 
+  riskLevel?: 'low' | 'medium' | 'high' | 'critical',
+  limit: 50 
+})
+```
+
+#### **Component Architecture**
+- All components follow same pattern:
+  - Loading state (Loader2 spinner + message)
+  - Error state (error message + retry button)
+  - Empty state (icon + message)
+  - Main content (only when data loaded)
+- Auto-refresh with cleanup on unmount
+- React hooks: useState, useEffect, trpc queries
+- Type-safe with TypeScript interfaces
+- Framer Motion animations
+
+#### **Files Changed**
+| File | Lines | Status | Changes |
+|------|-------|--------|---------|
+| `NetworkGraphVisualization.tsx` | 550 | Modified | +tRPC API, +loading states, +error handling, +refresh button |
+| `FraudDetectionDashboard.tsx` | 500 | Modified | +tRPC API, +auto-refresh, +notification logic, +filter integration |
+| `BankingIntegrationDashboard.tsx` | 470 | NEW | Full banking dashboard with LTV metrics and loan table |
+| `TransactionLedCore.tsx` | 830 | Modified | Cleaned up old mock code, integrated new components |
+
+**Total New Code:** ~1,200 lines (+47 KB)
+
+#### **User Experience Improvements**
+- Real-time data updates without page reload
+- Consistent loading indicators across all modules
+- Error recovery with retry functionality
+- Responsive layouts (grid adapts to screen size)
+- Visual feedback for user actions
+- Auto-refresh toggles for user control
+
+#### **Performance Optimizations**
+- Query caching via tRPC React Query
+- Debounced auto-refresh intervals
+- Conditional rendering (only show content when loaded)
+- Efficient re-renders (React.memo potential)
+- Lazy loading preparation
+
+#### **Tech Stack**
+- React 18 + TypeScript
+- tRPC v11 + React Query
+- Framer Motion (animations)
+- Tailwind CSS + shadcn/ui
+- Lucide React (icons)
+
+---
 
 ## [v3.7.0] - 2026-02-25
 
