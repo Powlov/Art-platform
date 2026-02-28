@@ -10,6 +10,7 @@ import {
   Download,
   Filter,
   Info,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,13 +22,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { trpc } from '@/lib/trpc';
 
 interface GraphNode {
   id: string;
   name: string;
-  type: 'artist' | 'gallery' | 'artwork' | 'collector';
+  type: 'artist' | 'gallery' | 'artwork' | 'collector' | 'transaction';
   trustScore: number;
   verified: boolean;
+  connections?: number;
+  digitalId?: string;
+  createdAt?: string;
   x?: number;
   y?: number;
   vx?: number;
@@ -58,26 +63,43 @@ const NetworkGraphVisualization: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [draggedNode, setDraggedNode] = useState<GraphNode | null>(null);
 
-  // Mock data (в production заменить на API)
+  // Fetch graph data from tRPC API
+  const { data: graphNodes, isLoading, error, refetch } = trpc.core.getGraphNodes.useQuery({
+    limit: 50,
+    type: filterType === 'all' ? undefined : filterType as any,
+  });
+
+  // Load data from API
   useEffect(() => {
-    const mockData: NetworkGraphData = {
-      nodes: [
-        { id: 'artist-001', name: 'В. Кандинский', type: 'artist', trustScore: 98.5, verified: true },
-        { id: 'artist-002', name: 'К. Малевич', type: 'artist', trustScore: 99.2, verified: true },
-        { id: 'artist-003', name: 'М. Шагал', type: 'artist', trustScore: 97.8, verified: true },
-        { id: 'gallery-001', name: 'Третьяковская', type: 'gallery', trustScore: 99.8, verified: true },
-        { id: 'gallery-002', name: 'Эрмитаж', type: 'gallery', trustScore: 99.9, verified: true },
-        { id: 'gallery-003', name: 'ГМИИ Пушкина', type: 'gallery', trustScore: 99.7, verified: true },
-        { id: 'artwork-001', name: 'Композиция VIII', type: 'artwork', trustScore: 96.5, verified: true },
-        { id: 'artwork-002', name: 'Чёрный квадрат', type: 'artwork', trustScore: 99.5, verified: true },
-        { id: 'artwork-003', name: 'Я и деревня', type: 'artwork', trustScore: 97.2, verified: true },
-        { id: 'collector-001', name: 'А. Иванов', type: 'collector', trustScore: 92.3, verified: true },
-        { id: 'collector-002', name: 'Фонд СИ', type: 'collector', trustScore: 94.7, verified: true },
-      ],
-      edges: [
-        { source: 'artist-001', target: 'artwork-001', type: 'authentication', verified: true },
-        { source: 'artwork-001', target: 'gallery-001', type: 'exhibition', verified: true },
-        { source: 'gallery-001', target: 'collector-001', type: 'sale', verified: true },
+    if (graphNodes && graphNodes.length > 0) {
+      // Convert API nodes to graph format
+      const nodes: GraphNode[] = graphNodes.map((node) => ({
+        id: node.id,
+        name: node.name,
+        type: node.type,
+        trustScore: node.trustScore,
+        verified: node.verified,
+        connections: node.connections,
+        digitalId: node.digitalId,
+        createdAt: node.createdAt,
+      }));
+
+      // Generate edges based on connections (mock for now)
+      const edges: GraphEdge[] = [];
+      for (let i = 0; i < nodes.length - 1; i++) {
+        if (Math.random() > 0.5 && i + 1 < nodes.length) {
+          edges.push({
+            source: nodes[i].id,
+            target: nodes[i + 1].id,
+            type: ['authentication', 'exhibition', 'sale', 'ownership', 'provenance'][Math.floor(Math.random() * 5)] as any,
+            verified: Math.random() > 0.2,
+          });
+        }
+      }
+
+      setGraphData({ nodes, edges });
+    }
+  }, [graphNodes]);
         { source: 'collector-001', target: 'artwork-001', type: 'ownership', verified: true },
         { source: 'artist-002', target: 'artwork-002', type: 'authentication', verified: true },
         { source: 'artwork-002', target: 'gallery-002', type: 'exhibition', verified: true },
@@ -96,8 +118,8 @@ const NetworkGraphVisualization: React.FC = () => {
       node.vy = 0;
     });
 
-    setGraphData(mockData);
-  }, []);
+    // Data loaded from API, no longer needed
+  }, [graphNodes]);
 
   // Force-directed graph simulation
   useEffect(() => {
@@ -281,54 +303,106 @@ const NetworkGraphVisualization: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Controls Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Network className="w-5 h-5 text-purple-600" />
-              Network Graph Visualization
+      {/* Loading State */}
+      {isLoading && (
+        <Card>
+          <CardContent className="flex items-center justify-center p-12">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+              <p className="text-gray-600">Загрузка данных графа...</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все узлы</SelectItem>
-                  <SelectItem value="artist">Художники</SelectItem>
-                  <SelectItem value="gallery">Галереи</SelectItem>
-                  <SelectItem value="artwork">Произведения</SelectItem>
-                  <SelectItem value="collector">Коллекционеры</SelectItem>
-                </SelectContent>
-              </Select>
+          </CardContent>
+        </Card>
+      )}
 
-              <Button variant="outline" size="sm" onClick={handleZoomIn}>
-                <ZoomIn className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleZoomOut}>
-                <ZoomOut className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setIsFullscreen(!isFullscreen)}>
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
+      {/* Error State */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-200 flex items-center justify-center">
+                <Info className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-red-900">Ошибка загрузки данных</h4>
+                <p className="text-sm text-red-700">{error.message}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => refetch()}
+                >
+                  Повторить
+                </Button>
+              </div>
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-purple-600"></div>
-              <span className="text-sm text-gray-600">Художник</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-blue-600"></div>
-              <span className="text-sm text-gray-600">Галерея</span>
-            </div>
-            <div className="flex items-center gap-2">
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Graph Visualization - only show when data is loaded */}
+      {!isLoading && !error && graphData.nodes.length > 0 && (
+        <>
+          {/* Controls Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Network className="w-5 h-5 text-purple-600" />
+                  Network Graph Visualization
+                  <Badge variant="secondary" className="ml-2">
+                    {graphData.nodes.length} узлов
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Все узлы</SelectItem>
+                      <SelectItem value="artist">Художники</SelectItem>
+                      <SelectItem value="gallery">Галереи</SelectItem>
+                      <SelectItem value="artwork">Произведения</SelectItem>
+                      <SelectItem value="collector">Коллекционеры</SelectItem>
+                      <SelectItem value="transaction">Транзакции</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button variant="outline" size="sm" onClick={handleZoomIn}>
+                    <ZoomIn className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleZoomOut}>
+                    <ZoomOut className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleReset}>
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => refetch()}
+                    title="Обновить данные"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setIsFullscreen(!isFullscreen)}>
+                    {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-purple-600"></div>
+                  <span className="text-sm text-gray-600">Художник</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-blue-600"></div>
+                  <span className="text-sm text-gray-600">Галерея</span>
+                </div>
+                <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-orange-600"></div>
               <span className="text-sm text-gray-600">Произведение</span>
             </div>
@@ -457,6 +531,21 @@ const NetworkGraphVisualization: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+      </>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !error && graphData.nodes.length === 0 && (
+        <Card>
+          <CardContent className="flex items-center justify-center p-12">
+            <div className="flex flex-col items-center gap-4">
+              <Network className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">Нет данных для отображения</p>
+              <Button onClick={() => refetch()}>Загрузить данные</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

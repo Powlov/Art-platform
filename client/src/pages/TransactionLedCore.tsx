@@ -51,6 +51,7 @@ import MLValuationCalculator from '@/components/MLValuationCalculator';
 import GraphTrustProvenanceViewer from '@/components/GraphTrustProvenanceViewer';
 import NetworkGraphVisualization from '@/components/NetworkGraphVisualization';
 import FraudDetectionDashboard from '@/components/FraudDetectionDashboard';
+import BankingIntegrationDashboard from '@/components/BankingIntegrationDashboard';
 
 interface CoreModule {
   id: string;
@@ -757,137 +758,11 @@ const TransactionLedCore: React.FC = () => {
           <TabsContent value="anti-fraud" className="space-y-6">
             {/* Fraud Detection Dashboard */}
             <FraudDetectionDashboard />
-                  {fraudAlerts.map((alert, index) => (
-                    <motion.div
-                      key={alert.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={`p-4 border-l-4 rounded-lg ${
-                        alert.severity === 'high' ? 'border-red-500 bg-red-50' :
-                        alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
-                        'border-blue-500 bg-blue-50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <AlertTriangle className={`w-6 h-6 ${
-                            alert.severity === 'high' ? 'text-red-600' :
-                            alert.severity === 'medium' ? 'text-yellow-600' :
-                            'text-blue-600'
-                          }`} />
-                          <div>
-                            <h4 className="font-semibold text-gray-900">
-                              {alert.type === 'wash_trading' && 'Wash Trading'}
-                              {alert.type === 'price_manipulation' && 'Манипуляция ценой'}
-                              {alert.type === 'fake_provenance' && 'Подозрительный провинанс'}
-                              {alert.type === 'anomaly' && 'Аномалия'}
-                            </h4>
-                            <p className="text-sm text-gray-600">ID: {alert.artworkId}</p>
-                          </div>
-                        </div>
-                        <Badge className={getStatusColor(alert.status)}>
-                          {alert.status === 'investigating' && 'Расследование'}
-                          {alert.status === 'resolved' && 'Решено'}
-                          {alert.status === 'flagged' && 'Помечено'}
-                        </Badge>
-                      </div>
-                      <p className="text-gray-700 mb-3">{alert.description}</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">
-                          {new Date(alert.timestamp).toLocaleString('ru-RU')}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            Подробнее
-                          </Button>
-                          <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600">
-                            Действия
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Banking Tab */}
           <TabsContent value="banking" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  Банковские интеграции
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {bankingIntegrations.map((bank, index) => (
-                    <motion.div
-                      key={bank.bankId}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="p-6 border border-gray-200 rounded-xl hover:border-purple-300 transition-all"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white">
-                            <Building className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">{bank.bankName}</h3>
-                            <p className="text-sm text-gray-600">ID: {bank.bankId}</p>
-                          </div>
-                        </div>
-                        <Badge className={getStatusColor(bank.status)}>
-                          {bank.status === 'connected' ? 'Подключен' : 
-                           bank.status === 'pending' ? 'Ожидание' : 'Ошибка'}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Объём кредитов</p>
-                          <p className="text-lg font-bold text-gray-900">{formatCurrency(bank.loanVolume)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Средний LTV</p>
-                          <p className="text-lg font-bold text-purple-600">{bank.avgLTV}%</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Активных займов</p>
-                          <p className="text-lg font-bold text-gray-900">{bank.activeLoans}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Последняя синхронизация</p>
-                          <p className="text-sm text-gray-900">
-                            {new Date(bank.lastSync).toLocaleTimeString('ru-RU')}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Синхронизировать
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Download className="w-4 h-4 mr-2" />
-                          Отчёт
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Настройки API
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <BankingIntegrationDashboard />
           </TabsContent>
         </Tabs>
       </div>

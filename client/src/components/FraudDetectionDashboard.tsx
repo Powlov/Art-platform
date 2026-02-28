@@ -15,6 +15,8 @@ import {
   RefreshCw,
   Bell,
   BellOff,
+  Loader2,
+  Info,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { trpc } from '@/lib/trpc';
 
 interface FraudAlert {
   id: string;
@@ -56,28 +59,31 @@ interface FraudStats {
 }
 
 const FraudDetectionDashboard: React.FC = () => {
-  const [alerts, setAlerts] = useState<FraudAlert[]>([]);
-  const [stats, setStats] = useState<FraudStats | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('active');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [notifications, setNotifications] = useState(true);
 
-  // Mock data (в production заменить на real-time WebSocket)
+  // Fetch alerts from tRPC API
+  const { data: fraudAlerts, isLoading, error, refetch } = trpc.core.getFraudAlerts.useQuery({
+    severity: filterSeverity === 'all' ? undefined : filterSeverity as any,
+    status: filterStatus === 'all' ? undefined : filterStatus as any,
+    limit: 50,
+  });
+
+  // Fetch fraud statistics
+  const { data: fraudStats } = trpc.core.getFraudStatistics.useQuery();
+
+  // Auto-refresh every 30 seconds if enabled
   useEffect(() => {
-    const mockAlerts: FraudAlert[] = [
-      {
-        id: 'alert-001',
-        type: 'wash_trading',
-        severity: 'critical',
-        artworkId: 'artwork-123',
-        artworkTitle: 'Абстракция №5',
-        description: 'Обнаружена циркулярная торговля между 3 связанными участниками',
-        evidence: [
-          { type: 'Circular Pattern', value: '3 transactions in 48h', confidence: 95 },
-          { type: 'Price Consistency', value: 'Same price ±2%', confidence: 88 },
-          { type: 'Related Parties', value: 'Common ownership', confidence: 92 },
-        ],
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      refetch();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refetch]);
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
         status: 'active',
       },
@@ -138,27 +144,25 @@ const FraudDetectionDashboard: React.FC = () => {
       criticalAlerts: 2,
     };
 
-    setAlerts(mockAlerts);
-    setStats(mockStats);
-  }, []);
+    // Data now loaded from API
+  }, [fraudAlerts]);
 
-  // Auto-refresh simulation
+  // Notification effect for new critical alerts
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!fraudAlerts || !notifications) return;
 
-    const interval = setInterval(() => {
-      // Simulate new alert every 30 seconds
-      if (Math.random() > 0.7) {
-        console.log('[FraudDashboard] New alert detected (simulated)');
-        if (notifications) {
-          // Trigger browser notification (in production)
-          // new Notification('New Fraud Alert', { body: '...' });
-        }
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, notifications]);
+    const criticalAlerts = fraudAlerts.filter(a => a.severity === 'critical');
+    if (criticalAlerts.length > 0) {
+      console.log(`[FraudDashboard] ${criticalAlerts.length} critical alert(s) detected`);
+      // In production: Browser notification
+      // if (Notification.permission === 'granted') {
+      //   new Notification('Critical Fraud Alert', { 
+      //     body: `${criticalAlerts[0].description}`,
+      //     icon: '/logo.png'
+      //   });
+      // }
+    }
+  }, [fraudAlerts, notifications]);
 
   const getSeverityColor = (severity: string) => {
     const colors: Record<string, string> = {
@@ -205,14 +209,15 @@ const FraudDetectionDashboard: React.FC = () => {
     }
   };
 
-  const filteredAlerts = alerts.filter((alert) => {
+  const filteredAlerts = (fraudAlerts || []).filter((alert) => {
     if (filterSeverity !== 'all' && alert.severity !== filterSeverity) return false;
     if (filterStatus !== 'all' && alert.status !== filterStatus) return false;
     return true;
   });
 
-  const formatTimeAgo = (date: Date) => {
-    const hours = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60));
+  const formatTimeAgo = (date: Date | string) => {
+    const alertDate = typeof date === 'string' ? new Date(date) : date;
+    const hours = Math.floor((Date.now() - alertDate.getTime()) / (1000 * 60 * 60));
     if (hours < 1) return 'Только что';
     if (hours < 24) return `${hours}ч назад`;
     return `${Math.floor(hours / 24)}д назад`;
@@ -220,8 +225,48 @@ const FraudDetectionDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Loading State */}
+      {isLoading && (
+        <Card>
+          <CardContent className="flex items-center justify-center p-12">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+              <p className="text-gray-600">Загрузка данных системы защиты...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-200 flex items-center justify-center">
+                <Info className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-red-900">Ошибка загрузки данных</h4>
+                <p className="text-sm text-red-700">{error.message}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => refetch()}
+                >
+                  Повторить
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Dashboard - only show when data is loaded */}
+      {!isLoading && !error && (
+        <>
       {/* Stats Cards */}
-      {stats && (
+      {fraudStats && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="border-red-200">
             <CardContent className="pt-6">
@@ -229,7 +274,7 @@ const FraudDetectionDashboard: React.FC = () => {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
                 <Badge className="bg-red-100 text-red-700">Live</Badge>
               </div>
-              <p className="text-2xl font-bold text-red-600">{stats.activeAlerts}</p>
+              <p className="text-2xl font-bold text-red-600">{fraudStats.activeAlerts}</p>
               <p className="text-sm text-gray-600">Active Alerts</p>
             </CardContent>
           </Card>
@@ -240,7 +285,7 @@ const FraudDetectionDashboard: React.FC = () => {
                 <Shield className="w-5 h-5 text-orange-600" />
                 <span className="text-xs text-orange-600 font-semibold">CRITICAL</span>
               </div>
-              <p className="text-2xl font-bold text-orange-600">{stats.criticalAlerts}</p>
+              <p className="text-2xl font-bold text-orange-600">{fraudStats.criticalAlerts}</p>
               <p className="text-sm text-gray-600">Critical</p>
             </CardContent>
           </Card>
@@ -251,7 +296,7 @@ const FraudDetectionDashboard: React.FC = () => {
                 <CheckCircle className="w-5 h-5 text-green-600" />
                 <span className="text-xs text-green-600 font-semibold">TODAY</span>
               </div>
-              <p className="text-2xl font-bold text-green-600">{stats.resolvedToday}</p>
+              <p className="text-2xl font-bold text-green-600">{fraudStats.resolvedToday}</p>
               <p className="text-sm text-gray-600">Resolved</p>
             </CardContent>
           </Card>
@@ -262,7 +307,7 @@ const FraudDetectionDashboard: React.FC = () => {
                 <Activity className="w-5 h-5 text-blue-600" />
                 <span className="text-xs text-blue-600 font-semibold">TOTAL</span>
               </div>
-              <p className="text-2xl font-bold text-blue-600">{stats.totalAlerts}</p>
+              <p className="text-2xl font-bold text-blue-600">{fraudStats.totalAlerts}</p>
               <p className="text-sm text-gray-600">All Time</p>
             </CardContent>
           </Card>
@@ -284,7 +329,7 @@ const FraudDetectionDashboard: React.FC = () => {
                 <Eye className="w-5 h-5 text-gray-600" />
                 <span className="text-xs text-gray-600 font-semibold">FP RATE</span>
               </div>
-              <p className="text-2xl font-bold text-gray-600">{stats.falsePositiveRate}%</p>
+              <p className="text-2xl font-bold text-gray-600">{fraudStats.falsePositiveRate}%</p>
               <p className="text-sm text-gray-600">False Positive</p>
             </CardContent>
           </Card>
@@ -455,6 +500,8 @@ const FraudDetectionDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 };
