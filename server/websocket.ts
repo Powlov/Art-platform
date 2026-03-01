@@ -154,6 +154,30 @@ async function handleWebSocketMessage(
       client.ws.send(JSON.stringify({ type: 'pong', timestamp: new Date() }));
       break;
 
+    case 'subscribe_fraud_alerts':
+      client.ws.send(JSON.stringify({ 
+        type: 'fraud_alerts_subscribed',
+        timestamp: new Date()
+      }));
+      console.log(`[WebSocket] Client ${clientId} subscribed to fraud alerts`);
+      break;
+
+    case 'subscribe_graph_updates':
+      client.ws.send(JSON.stringify({ 
+        type: 'graph_updates_subscribed',
+        timestamp: new Date()
+      }));
+      console.log(`[WebSocket] Client ${clientId} subscribed to graph updates`);
+      break;
+
+    case 'subscribe_banking_updates':
+      client.ws.send(JSON.stringify({ 
+        type: 'banking_updates_subscribed',
+        timestamp: new Date()
+      }));
+      console.log(`[WebSocket] Client ${clientId} subscribed to banking updates`);
+      break;
+
     default:
       console.warn(`[WebSocket] Unknown message type: ${type}`);
   }
@@ -362,3 +386,105 @@ export function broadcastNotification(notification: {
     }
   });
 }
+
+// Broadcast fraud alert to all connected users
+export function broadcastFraudAlert(alert: {
+  id: string;
+  type: 'wash_trading' | 'price_manipulation' | 'fake_provenance' | 'circular_ownership' | 'rapid_trades' | 'anomaly';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  artworkId: string;
+  artworkTitle: string;
+  description: string;
+  confidence?: number;
+  timestamp: Date;
+}) {
+  const alertMessage = {
+    type: 'fraud_alert',
+    alert: {
+      id: alert.id,
+      type: alert.type,
+      severity: alert.severity,
+      artworkId: alert.artworkId,
+      artworkTitle: alert.artworkTitle,
+      description: alert.description,
+      confidence: alert.confidence || 85,
+      timestamp: alert.timestamp,
+      status: 'active'
+    }
+  };
+
+  clients.forEach((client) => {
+    if (client.ws.readyState === WebSocket.OPEN) {
+      client.ws.send(JSON.stringify(alertMessage));
+      console.log(`[WebSocket] Sent fraud alert ${alert.id} to client`);
+    }
+  });
+}
+
+// Broadcast graph trust update
+export function broadcastGraphUpdate(update: {
+  nodeId: string;
+  nodeName: string;
+  nodeType: 'artist' | 'gallery' | 'artwork' | 'collector' | 'transaction';
+  action: 'created' | 'updated' | 'verified';
+  trustScore?: number;
+  timestamp: Date;
+}) {
+  const updateMessage = {
+    type: 'graph_update',
+    update: {
+      nodeId: update.nodeId,
+      nodeName: update.nodeName,
+      nodeType: update.nodeType,
+      action: update.action,
+      trustScore: update.trustScore,
+      timestamp: update.timestamp
+    }
+  };
+
+  clients.forEach((client) => {
+    if (client.ws.readyState === WebSocket.OPEN) {
+      client.ws.send(JSON.stringify(updateMessage));
+    }
+  });
+}
+
+// Broadcast banking update (LTV change, margin call, etc.)
+export function broadcastBankingUpdate(update: {
+  loanId: string;
+  bankName: string;
+  artworkTitle: string;
+  updateType: 'ltv_change' | 'margin_call' | 'loan_created' | 'loan_paid' | 'valuation_update';
+  currentLTV?: number;
+  previousLTV?: number;
+  message: string;
+  severity: 'info' | 'warning' | 'critical';
+  timestamp: Date;
+}) {
+  const updateMessage = {
+    type: 'banking_update',
+    update: {
+      loanId: update.loanId,
+      bankName: update.bankName,
+      artworkTitle: update.artworkTitle,
+      updateType: update.updateType,
+      currentLTV: update.currentLTV,
+      previousLTV: update.previousLTV,
+      message: update.message,
+      severity: update.severity,
+      timestamp: update.timestamp
+    }
+  };
+
+  clients.forEach((client) => {
+    if (client.ws.readyState === WebSocket.OPEN) {
+      client.ws.send(JSON.stringify(updateMessage));
+    }
+  });
+}
+
+// Get all connected clients count
+export function getConnectedClientsCount(): number {
+  return clients.size;
+}
+

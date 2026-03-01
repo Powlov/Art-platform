@@ -17,6 +17,7 @@ import {
   BellOff,
   Loader2,
   Info,
+  Radio,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { trpc } from '@/lib/trpc';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface FraudAlert {
   id: string;
@@ -63,6 +65,47 @@ const FraudDetectionDashboard: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('active');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [notifications, setNotifications] = useState(true);
+  const [realtimeAlerts, setRealtimeAlerts] = useState<FraudAlert[]>([]);
+
+  // WebSocket connection for real-time updates
+  const { isConnected, lastMessage, subscribe } = useWebSocket({
+    autoConnect: true,
+    onMessage: (message) => {
+      if (message.type === 'fraud_alert') {
+        const newAlert: FraudAlert = {
+          ...message.alert,
+          timestamp: new Date(message.alert.timestamp),
+          evidence: message.alert.evidence || [],
+        };
+        
+        // Add to realtime alerts
+        setRealtimeAlerts((prev) => [newAlert, ...prev].slice(0, 10));
+        
+        // Show browser notification for critical alerts
+        if (notifications && message.alert.severity === 'critical' && 'Notification' in window) {
+          if (Notification.permission === 'granted') {
+            new Notification('Critical Fraud Alert', {
+              body: message.alert.description,
+              icon: '/logo.png',
+              badge: '/logo.png',
+            });
+          } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission();
+          }
+        }
+        
+        // Refetch to update main list
+        refetch();
+      }
+    },
+  });
+
+  // Subscribe to fraud alerts on mount
+  useEffect(() => {
+    if (isConnected) {
+      subscribe('fraud_alerts');
+    }
+  }, [isConnected, subscribe]);
 
   // Fetch alerts from tRPC API
   const { data: fraudAlerts, isLoading, error, refetch } = trpc.core.getFraudAlerts.useQuery({
@@ -347,6 +390,18 @@ const FraudDetectionDashboard: React.FC = () => {
                 <Badge className="bg-green-100 text-green-700 animate-pulse">
                   <Activity className="w-3 h-3 mr-1" />
                   Live
+                </Badge>
+              )}
+              {/* WebSocket Status */}
+              {isConnected && (
+                <Badge className="bg-blue-100 text-blue-700">
+                  <Radio className="w-3 h-3 mr-1 animate-pulse" />
+                  WebSocket
+                </Badge>
+              )}
+              {realtimeAlerts.length > 0 && (
+                <Badge className="bg-orange-100 text-orange-700">
+                  {realtimeAlerts.length} new
                 </Badge>
               )}
             </div>

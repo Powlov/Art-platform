@@ -1029,6 +1029,100 @@ export const transactionLedCoreRouter = router({
       },
     };
   }),
+
+  // WebSocket Test Endpoints
+  testFraudAlert: publicProcedure
+    .input(
+      z.object({
+        severity: z.enum(['critical', 'high', 'medium', 'low']).optional().default('high'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Simula broadcast via WebSocket
+      const { broadcastFraudAlert } = await import('../websocket');
+      
+      const alert = {
+        id: `alert-test-${Date.now()}`,
+        type: 'wash_trading' as const,
+        severity: input.severity as 'critical' | 'high' | 'medium' | 'low',
+        artworkId: `artwork-${Math.floor(Math.random() * 1000)}`,
+        artworkTitle: `Test Artwork ${Math.floor(Math.random() * 100)}`,
+        description: `Test fraud alert - циркулярная торговля обнаружена между ${Math.floor(Math.random() * 5) + 2} участниками`,
+        confidence: Math.floor(Math.random() * 20) + 75,
+        timestamp: new Date(),
+      };
+
+      broadcastFraudAlert(alert);
+      
+      return {
+        success: true,
+        message: 'Fraud alert broadcasted via WebSocket',
+        alert,
+      };
+    }),
+
+  testGraphUpdate: publicProcedure
+    .mutation(async () => {
+      const { broadcastGraphUpdate } = await import('../websocket');
+      
+      const types = ['artist', 'gallery', 'artwork', 'collector'] as const;
+      const actions = ['created', 'updated', 'verified'] as const;
+      
+      const update = {
+        nodeId: `node-${Date.now()}`,
+        nodeName: `Test Node ${Math.floor(Math.random() * 100)}`,
+        nodeType: types[Math.floor(Math.random() * types.length)],
+        action: actions[Math.floor(Math.random() * actions.length)],
+        trustScore: Math.floor(Math.random() * 15) + 85,
+        timestamp: new Date(),
+      };
+
+      broadcastGraphUpdate(update);
+      
+      return {
+        success: true,
+        message: 'Graph update broadcasted via WebSocket',
+        update,
+      };
+    }),
+
+  testBankingUpdate: publicProcedure
+    .mutation(async () => {
+      const { broadcastBankingUpdate } = await import('../websocket');
+      
+      const types = ['ltv_change', 'margin_call', 'valuation_update'] as const;
+      const currentLTV = Math.floor(Math.random() * 30) + 60;
+      
+      const update = {
+        loanId: `LOAN-${Math.floor(Math.random() * 1000)}`,
+        bankName: ['Сбербанк', 'ВТБ', 'Альфа-Банк'][Math.floor(Math.random() * 3)],
+        artworkTitle: `Artwork ${Math.floor(Math.random() * 100)}`,
+        updateType: types[Math.floor(Math.random() * types.length)] as 'ltv_change' | 'margin_call' | 'valuation_update',
+        currentLTV,
+        previousLTV: currentLTV - Math.floor(Math.random() * 10),
+        message: `LTV изменился до ${currentLTV}%`,
+        severity: currentLTV > 80 ? 'critical' : currentLTV > 70 ? 'warning' : 'info' as 'info' | 'warning' | 'critical',
+        timestamp: new Date(),
+      };
+
+      broadcastBankingUpdate(update);
+      
+      return {
+        success: true,
+        message: 'Banking update broadcasted via WebSocket',
+        update,
+      };
+    }),
+
+  getWebSocketStats: publicProcedure.query(async () => {
+    const { getConnectedClientsCount } = await import('../websocket');
+    
+    return {
+      connectedClients: getConnectedClientsCount(),
+      serverTime: new Date(),
+      wsPath: '/ws',
+    };
+  }),
 });
 
 export type TransactionLedCoreRouter = typeof transactionLedCoreRouter;
