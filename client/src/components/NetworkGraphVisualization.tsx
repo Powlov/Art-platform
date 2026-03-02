@@ -23,6 +23,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
+import { 
+  exportToCSV, 
+  exportToJSON, 
+  prepareGraphNodesForExport,
+  getTimestampForFilename 
+} from '@/utils/exportUtils';
 
 interface GraphNode {
   id: string;
@@ -280,6 +286,21 @@ const NetworkGraphVisualization: React.FC = () => {
     setSelectedNode(clickedNode || null);
   };
 
+  // Export function
+  const handleExportCSV = () => {
+    if (!graphNodes || graphNodes.length === 0) {
+      alert('Нет данных для экспорта');
+      return;
+    }
+
+    const exportData = prepareGraphNodesForExport(graphNodes);
+    const timestamp = getTimestampForFilename();
+    const filename = `graph_nodes_${timestamp}.csv`;
+    
+    exportToCSV(exportData, filename);
+    console.log(`[NetworkGraph] Exported ${graphNodes.length} nodes to ${filename}`);
+  };
+
   const getNodeTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       artist: 'Художник',
@@ -388,6 +409,15 @@ const NetworkGraphVisualization: React.FC = () => {
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setIsFullscreen(!isFullscreen)}>
                     {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleExportCSV}
+                    title="Export nodes to CSV"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    CSV
                   </Button>
                 </div>
               </CardTitle>

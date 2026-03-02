@@ -32,6 +32,12 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { trpc } from '@/lib/trpc';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { 
+  exportToCSV, 
+  exportToJSON, 
+  prepareFraudAlertsForExport, 
+  getTimestampForFilename 
+} from '@/utils/exportUtils';
 
 interface FraudAlert {
   id: string;
@@ -266,6 +272,34 @@ const FraudDetectionDashboard: React.FC = () => {
     return `${Math.floor(hours / 24)}д назад`;
   };
 
+  // Export functions
+  const handleExportCSV = () => {
+    if (!filteredAlerts || filteredAlerts.length === 0) {
+      alert('Нет данных для экспорта');
+      return;
+    }
+
+    const exportData = prepareFraudAlertsForExport(filteredAlerts);
+    const timestamp = getTimestampForFilename();
+    const filename = `fraud_alerts_${timestamp}.csv`;
+    
+    exportToCSV(exportData, filename);
+    console.log(`[FraudDashboard] Exported ${filteredAlerts.length} alerts to ${filename}`);
+  };
+
+  const handleExportJSON = () => {
+    if (!filteredAlerts || filteredAlerts.length === 0) {
+      alert('Нет данных для экспорта');
+      return;
+    }
+
+    const timestamp = getTimestampForFilename();
+    const filename = `fraud_alerts_${timestamp}.json`;
+    
+    exportToJSON(filteredAlerts, filename);
+    console.log(`[FraudDashboard] Exported ${filteredAlerts.length} alerts to ${filename}`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Loading State */}
@@ -448,8 +482,14 @@ const FraudDetectionDashboard: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
               </Button>
 
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleExportCSV}
+                title="Export to CSV"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                CSV
               </Button>
             </div>
           </CardTitle>

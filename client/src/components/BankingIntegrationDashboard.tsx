@@ -28,6 +28,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
+import { 
+  exportToCSV, 
+  exportToJSON, 
+  prepareBankingLoansForExport,
+  prepareBankingIntegrationsForExport,
+  getTimestampForFilename 
+} from '@/utils/exportUtils';
 
 interface BankingIntegration {
   bankId: string;
@@ -122,6 +129,35 @@ const BankingIntegrationDashboard: React.FC = () => {
       month: 'short',
       year: 'numeric',
     });
+  };
+
+  // Export functions
+  const handleExportLoansCSV = () => {
+    if (!bankingLoans || bankingLoans.length === 0) {
+      alert('Нет данных по займам для экспорта');
+      return;
+    }
+
+    const exportData = prepareBankingLoansForExport(bankingLoans);
+    const timestamp = getTimestampForFilename();
+    const filename = `banking_loans_${timestamp}.csv`;
+    
+    exportToCSV(exportData, filename);
+    console.log(`[BankingDashboard] Exported ${bankingLoans.length} loans to ${filename}`);
+  };
+
+  const handleExportBanksCSV = () => {
+    if (!bankingData || bankingData.length === 0) {
+      alert('Нет данных по банкам для экспорта');
+      return;
+    }
+
+    const exportData = prepareBankingIntegrationsForExport(bankingData);
+    const timestamp = getTimestampForFilename();
+    const filename = `banking_integrations_${timestamp}.csv`;
+    
+    exportToCSV(exportData, filename);
+    console.log(`[BankingDashboard] Exported ${bankingData.length} banks to ${filename}`);
   };
 
   return (
@@ -242,6 +278,15 @@ const BankingIntegrationDashboard: React.FC = () => {
                   >
                     Auto-refresh
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportBanksCSV}
+                    title="Export banks to CSV"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    CSV
+                  </Button>
                 </div>
               </CardTitle>
             </CardHeader>
@@ -338,6 +383,16 @@ const BankingIntegrationDashboard: React.FC = () => {
                       <SelectItem value="critical">Critical</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportLoansCSV}
+                    title="Export loans to CSV"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    CSV
+                  </Button>
                 </div>
               </CardTitle>
             </CardHeader>
