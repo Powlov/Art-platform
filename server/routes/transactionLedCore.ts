@@ -1030,6 +1030,141 @@ export const transactionLedCoreRouter = router({
     };
   }),
 
+  // ==========================================
+  // BANKING PARTNER API
+  // ==========================================
+  
+  /**
+   * Get Bank Partner info by userId
+   */
+  getBankPartner: publicProcedure
+    .input(z.object({
+      userId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const { getBankPartnerByUserId, getBankPartners } = await import('../db');
+      
+      if (input.userId) {
+        const partner = getBankPartnerByUserId(input.userId);
+        return partner;
+      }
+      
+      // Return first bank for demo (should be based on authenticated user)
+      const partners = getBankPartners();
+      return partners[0] || null;
+    }),
+
+  /**
+   * Get all Bank Partners
+   */
+  getBankPartners: publicProcedure
+    .input(z.object({
+      status: z.string().optional(),
+      limit: z.number().default(50),
+    }))
+    .query(async ({ input }) => {
+      const { getBankPartners } = await import('../db');
+      return getBankPartners(input.status, input.limit);
+    }),
+
+  /**
+   * Get Banking Loans with filters
+   */
+  getBankingLoans: publicProcedure
+    .input(z.object({
+      bankPartnerId: z.number().optional(),
+      borrowerId: z.number().optional(),
+      status: z.string().optional(),
+      riskLevel: z.string().optional(),
+      limit: z.number().default(50),
+    }))
+    .query(async ({ input }) => {
+      const { getBankingLoans } = await import('../db');
+      return getBankingLoans(input);
+    }),
+
+  /**
+   * Get single Banking Loan by loanId
+   */
+  getBankingLoan: publicProcedure
+    .input(z.object({
+      loanId: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const { getBankingLoanByLoanId } = await import('../db');
+      return getBankingLoanByLoanId(input.loanId);
+    }),
+
+  /**
+   * Get Loan Valuations history
+   */
+  getLoanValuations: publicProcedure
+    .input(z.object({
+      loanId: z.number(),
+      limit: z.number().default(50),
+    }))
+    .query(async ({ input }) => {
+      const { getLoanValuations } = await import('../db');
+      return getLoanValuations(input.loanId, input.limit);
+    }),
+
+  /**
+   * Get Banking Statistics for Bank Portal
+   */
+  getBankingStatistics: publicProcedure
+    .input(z.object({
+      bankPartnerId: z.number().optional(),
+      period: z.enum(['today', 'week', 'month', 'year']).default('month'),
+    }))
+    .query(async ({ input }) => {
+      const { getBankingLoans, getBankPartnerByUserId } = await import('../db');
+      
+      // Get all loans for this bank
+      const loans = getBankingLoans({
+        bankPartnerId: input.bankPartnerId,
+        limit: 1000,
+      });
+      
+      const activeLoans = loans.filter(l => l.status === 'active');
+      const pendingLoans = loans.filter(l => l.status === 'pending');
+      const marginCallLoans = loans.filter(l => l.status === 'margin_call');
+      
+      const totalVolume = activeLoans.reduce((sum, loan) => sum + (loan.loanAmount || 0), 0);
+      const avgLTV = activeLoans.length > 0 
+        ? activeLoans.reduce((sum, loan) => sum + (loan.currentLTV || 0), 0) / activeLoans.length 
+        : 0;
+      
+      return {
+        totalLoans: loans.length,
+        activeLoans: activeLoans.length,
+        pendingApplications: pendingLoans.length,
+        totalVolume,
+        avgLTV,
+        portfolioRisk: avgLTV > 70 ? 'high' : avgLTV > 60 ? 'medium' : 'low',
+        marginCalls: marginCallLoans.length,
+        defaultRate: 1.2, // Mock data
+        ltvDistribution: [
+          { range: '0-50%', count: activeLoans.filter(l => l.currentLTV < 50).length },
+          { range: '50-65%', count: activeLoans.filter(l => l.currentLTV >= 50 && l.currentLTV < 65).length },
+          { range: '65-75%', count: activeLoans.filter(l => l.currentLTV >= 65 && l.currentLTV < 75).length },
+          { range: '75-85%', count: activeLoans.filter(l => l.currentLTV >= 75).length },
+        ],
+      };
+    }),
+
+  /**
+   * Get Bank API Logs
+   */
+  getBankApiLogs: publicProcedure
+    .input(z.object({
+      bankPartnerId: z.number(),
+      limit: z.number().default(100),
+    }))
+    .query(async ({ input }) => {
+      const { getBankApiLogs } = await import('../db');
+      return getBankApiLogs(input.bankPartnerId, input.limit);
+    }),
+
   // WebSocket Test Endpoints
   testFraudAlert: publicProcedure
     .input(

@@ -24,6 +24,7 @@ const CuratorDashboard = lazy(() => import("./pages/dashboards/EnhancedCuratorDa
 const PartnerDashboard = lazy(() => import("./pages/dashboards/EnhancedPartnerDashboard"));
 const ConsultantDashboard = lazy(() => import("./pages/dashboards/EnhancedConsultantDashboard"));
 const GuestDashboard = lazy(() => import("./pages/dashboards/GuestDashboard"));
+const BankPortal = lazy(() => import("./pages/BankPortal"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const ArtworkDetails = lazy(() => import("./pages/ArtworkDetails"));
 const Auctions = lazy(() => import("./pages/Auctions"));
@@ -133,6 +134,7 @@ function Router() {
         <Route path={"/clubs/:id"} component={ClubDetails} />
         <Route path={"/profile"} component={Profile} />
         <Route path={"/wallet"} component={Wallet} />
+        <Route path={"/bank-portal"} component={BankPortal} />
         <Route path={"/rfq"} component={RFQSystem} />
         <Route path={"/crowdfunding"} component={Crowdfunding} />
         <Route path={"/art-credit"} component={ArtCredit} />
