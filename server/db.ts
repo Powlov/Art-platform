@@ -5,10 +5,12 @@ import {
   InsertUser, users, artworks, artists, galleries, collectors, auctions, 
   transactions, news, messages, wishlists, messageRequests, notifications,
   artworkPassports, wallets, walletTransactions, paymentMethods, paymentGatewayLogs,
+  bankPartners, bankingLoans, loanValuations, bankApiLogs,
   InsertArtwork, InsertArtist, InsertGallery, InsertCollector, InsertAuction, 
   InsertTransaction, InsertNews, InsertMessage, InsertWishlist, InsertMessageRequest,
   InsertNotification, InsertArtworkPassport, InsertWallet, InsertWalletTransaction,
-  InsertPaymentMethod, InsertPaymentGatewayLog
+  InsertPaymentMethod, InsertPaymentGatewayLog,
+  InsertBankPartner, InsertBankingLoan, InsertLoanValuation, InsertBankApiLog
 } from "../drizzle/schema-sqlite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -684,3 +686,225 @@ export function logPaymentGateway(data: InsertPaymentGatewayLog) {
   
   return db.insert(paymentGatewayLogs).values(data).run().lastInsertRowid;
 }
+
+// ============================================
+// Banking System Functions
+// ============================================
+
+/**
+ * Get bank partner by userId
+ */
+export function getBankPartnerByUserId(userId: number) {
+  const db = getDb();
+  if (!db) return null;
+  
+  return db.select().from(bankPartners).where(eq(bankPartners.userId, userId)).get();
+}
+
+/**
+ * Get bank partner by bankCode
+ */
+export function getBankPartnerByBankCode(bankCode: string) {
+  const db = getDb();
+  if (!db) return null;
+  
+  return db.select().from(bankPartners).where(eq(bankPartners.bankCode, bankCode)).get();
+}
+
+/**
+ * Get all bank partners with optional filter
+ */
+export function getBankPartners(connectionStatus?: string, limit: number = 50) {
+  const db = getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(bankPartners);
+  
+  if (connectionStatus) {
+    query = query.where(eq(bankPartners.connectionStatus, connectionStatus as any));
+  }
+  
+  return query.limit(limit).all();
+}
+
+/**
+ * Create bank partner
+ */
+export function createBankPartner(data: InsertBankPartner) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(bankPartners).values(data).run().lastInsertRowid;
+}
+
+/**
+ * Update bank partner
+ */
+export function updateBankPartner(id: number, data: Partial<InsertBankPartner>) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.update(bankPartners)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(bankPartners.id, id))
+    .run();
+}
+
+/**
+ * Update bank partner statistics
+ */
+export function updateBankPartnerStats(id: number, stats: {
+  totalLoanVolume?: number;
+  activeLoans?: number;
+  avgLTV?: number;
+}) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.update(bankPartners)
+    .set({ ...stats, updatedAt: new Date() })
+    .where(eq(bankPartners.id, id))
+    .run();
+}
+
+/**
+ * Get banking loans with optional filters
+ */
+export function getBankingLoans(filters?: {
+  bankPartnerId?: number;
+  borrowerId?: number;
+  artworkId?: number;
+  status?: string;
+  riskLevel?: string;
+  limit?: number;
+}) {
+  const db = getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(bankingLoans);
+  const conditions = [];
+  
+  if (filters?.bankPartnerId) {
+    conditions.push(eq(bankingLoans.bankPartnerId, filters.bankPartnerId));
+  }
+  if (filters?.borrowerId) {
+    conditions.push(eq(bankingLoans.borrowerId, filters.borrowerId));
+  }
+  if (filters?.artworkId) {
+    conditions.push(eq(bankingLoans.artworkId, filters.artworkId));
+  }
+  if (filters?.status) {
+    conditions.push(eq(bankingLoans.status, filters.status as any));
+  }
+  if (filters?.riskLevel) {
+    conditions.push(eq(bankingLoans.riskLevel, filters.riskLevel as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions));
+  }
+  
+  return query.limit(filters?.limit || 50).orderBy(desc(bankingLoans.createdAt)).all();
+}
+
+/**
+ * Get loan by loanId
+ */
+export function getBankingLoanByLoanId(loanId: string) {
+  const db = getDb();
+  if (!db) return null;
+  
+  return db.select().from(bankingLoans).where(eq(bankingLoans.loanId, loanId)).get();
+}
+
+/**
+ * Create banking loan
+ */
+export function createBankingLoan(data: InsertBankingLoan) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(bankingLoans).values(data).run().lastInsertRowid;
+}
+
+/**
+ * Update banking loan
+ */
+export function updateBankingLoan(id: number, data: Partial<InsertBankingLoan>) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.update(bankingLoans)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(bankingLoans.id, id))
+    .run();
+}
+
+/**
+ * Update loan LTV and status
+ */
+export function updateLoanLTV(id: number, newLTV: number, newStatus?: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const updates: any = { currentLTV: newLTV, updatedAt: new Date() };
+  if (newStatus) {
+    updates.status = newStatus;
+  }
+  
+  return db.update(bankingLoans)
+    .set(updates)
+    .where(eq(bankingLoans.id, id))
+    .run();
+}
+
+/**
+ * Get loan valuations history
+ */
+export function getLoanValuations(loanId: number, limit: number = 50) {
+  const db = getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(loanValuations)
+    .where(eq(loanValuations.loanId, loanId))
+    .orderBy(desc(loanValuations.createdAt))
+    .limit(limit)
+    .all();
+}
+
+/**
+ * Create loan valuation
+ */
+export function createLoanValuation(data: InsertLoanValuation) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(loanValuations).values(data).run().lastInsertRowid;
+}
+
+/**
+ * Log bank API interaction
+ */
+export function logBankApi(data: InsertBankApiLog) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(bankApiLogs).values(data).run().lastInsertRowid;
+}
+
+/**
+ * Get bank API logs
+ */
+export function getBankApiLogs(bankPartnerId: number, limit: number = 100) {
+  const db = getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(bankApiLogs)
+    .where(eq(bankApiLogs.bankPartnerId, bankPartnerId))
+    .orderBy(desc(bankApiLogs.createdAt))
+    .limit(limit)
+    .all();
+}
+

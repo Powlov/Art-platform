@@ -13,7 +13,7 @@ export const users = sqliteTable("users", {
   avatar: text("avatar"),
   bio: text("bio"),
   loginMethod: text("loginMethod").default("email"),
-  role: text("role", { enum: ["user", "admin", "artist", "collector", "gallery", "partner", "curator", "consultant"] }).default("user").notNull(),
+  role: text("role", { enum: ["user", "admin", "artist", "collector", "gallery", "partner", "curator", "consultant", "bank"] }).default("user").notNull(),
   // Privacy settings
   privacyShowName: integer("privacyShowName", { mode: "boolean" }).default(true),
   privacyShowAvatar: integer("privacyShowAvatar", { mode: "boolean" }).default(true),
@@ -340,3 +340,151 @@ export const paymentGatewayLogs = sqliteTable("payment_gateway_logs", {
 
 export type PaymentGatewayLog = typeof paymentGatewayLogs.$inferSelect;
 export type InsertPaymentGatewayLog = typeof paymentGatewayLogs.$inferInsert;
+
+// ============================================
+// Banking System Tables
+// ============================================
+
+/**
+ * Bank Partners - Organizations that integrate with our platform
+ */
+export const bankPartners = sqliteTable("bank_partners", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("userId").notNull(), // Link to users table with role='bank'
+  bankCode: text("bankCode").unique().notNull(), // e.g., SBERBANK, VTB
+  bankName: text("bankName").notNull(),
+  legalName: text("legalName").notNull(),
+  licenseNumber: text("licenseNumber"),
+  registrationNumber: text("registrationNumber"),
+  
+  // Contact info
+  contactPerson: text("contactPerson"),
+  contactEmail: text("contactEmail"),
+  contactPhone: text("contactPhone"),
+  address: text("address"),
+  
+  // API Integration
+  apiKey: text("apiKey"),
+  webhookUrl: text("webhookUrl"),
+  connectionStatus: text("connectionStatus", { enum: ["pending", "connected", "suspended", "disconnected"] }).default("pending"),
+  
+  // Statistics
+  totalLoanVolume: real("totalLoanVolume").default(0),
+  activeLoans: integer("activeLoans").default(0),
+  avgLTV: real("avgLTV").default(0),
+  
+  // Settings
+  settings: text("settings"), // JSON: { maxLTV, minArtworkValue, interestRates, etc }
+  metadata: text("metadata"), // JSON
+  
+  lastSyncAt: integer("lastSyncAt", { mode: "timestamp" }),
+  createdAt: integer("createdAt", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export type BankPartner = typeof bankPartners.$inferSelect;
+export type InsertBankPartner = typeof bankPartners.$inferInsert;
+
+/**
+ * Banking Loans - Artwork-backed loans
+ */
+export const bankingLoans = sqliteTable("banking_loans", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  loanId: text("loanId").unique().notNull(), // e.g., LOAN-001
+  
+  // Bank relationship
+  bankPartnerId: integer("bankPartnerId").notNull(),
+  
+  // Borrower
+  borrowerId: integer("borrowerId").notNull(), // Link to users
+  
+  // Artwork collateral
+  artworkId: integer("artworkId").notNull(),
+  artworkValue: real("artworkValue").notNull(), // Current valuation
+  
+  // Loan details
+  loanAmount: real("loanAmount").notNull(),
+  ltv: real("ltv").notNull(), // Loan-to-Value ratio (%)
+  currentLTV: real("currentLTV").notNull(), // Current LTV (updated as artwork value changes)
+  interestRate: real("interestRate").notNull(), // Annual %
+  termMonths: integer("termMonths").notNull(),
+  
+  // Status
+  status: text("status", { enum: ["pending", "approved", "active", "paid", "defaulted", "margin_call"] }).default("pending"),
+  
+  // Risk management
+  marginCallThreshold: real("marginCallThreshold").default(80), // LTV % that triggers margin call
+  riskLevel: text("riskLevel", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
+  
+  // Valuation tracking
+  lastValuationDate: integer("lastValuationDate", { mode: "timestamp" }),
+  nextValuationDate: integer("nextValuationDate", { mode: "timestamp" }),
+  valuationFrequencyDays: integer("valuationFrequencyDays").default(30),
+  
+  // Dates
+  approvedAt: integer("approvedAt", { mode: "timestamp" }),
+  disbursedAt: integer("disbursedAt", { mode: "timestamp" }),
+  maturityDate: integer("maturityDate", { mode: "timestamp" }),
+  paidAt: integer("paidAt", { mode: "timestamp" }),
+  
+  // Additional info
+  notes: text("notes"),
+  metadata: text("metadata"), // JSON
+  
+  createdAt: integer("createdAt", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export type BankingLoan = typeof bankingLoans.$inferSelect;
+export type InsertBankingLoan = typeof bankingLoans.$inferInsert;
+
+/**
+ * Loan Valuations History - Track artwork value changes for active loans
+ */
+export const loanValuations = sqliteTable("loan_valuations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  loanId: integer("loanId").notNull(), // Link to bankingLoans
+  artworkId: integer("artworkId").notNull(),
+  
+  valuationAmount: real("valuationAmount").notNull(),
+  valuationMethod: text("valuationMethod", { enum: ["ml_engine", "expert", "market", "manual"] }).notNull(),
+  confidence: real("confidence"), // 0-100%
+  
+  previousLTV: real("previousLTV"),
+  newLTV: real("newLTV").notNull(),
+  
+  valuedBy: integer("valuedBy"), // User ID of valuator
+  notes: text("notes"),
+  metadata: text("metadata"), // JSON - e.g., ML model output
+  
+  createdAt: integer("createdAt", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export type LoanValuation = typeof loanValuations.$inferSelect;
+export type InsertLoanValuation = typeof loanValuations.$inferInsert;
+
+/**
+ * Bank API Logs - Track all API interactions with bank partners
+ */
+export const bankApiLogs = sqliteTable("bank_api_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  bankPartnerId: integer("bankPartnerId").notNull(),
+  
+  endpoint: text("endpoint").notNull(), // e.g., /api/loans/create
+  method: text("method", { enum: ["GET", "POST", "PUT", "DELETE"] }).notNull(),
+  
+  requestPayload: text("requestPayload"), // JSON
+  responsePayload: text("responsePayload"), // JSON
+  statusCode: integer("statusCode"),
+  
+  responseTime: integer("responseTime"), // milliseconds
+  errorMessage: text("errorMessage"),
+  
+  ipAddress: text("ipAddress"),
+  userAgent: text("userAgent"),
+  
+  createdAt: integer("createdAt", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export type BankApiLog = typeof bankApiLogs.$inferSelect;
+export type InsertBankApiLog = typeof bankApiLogs.$inferInsert;
