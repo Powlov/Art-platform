@@ -29,6 +29,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { trpc } from '@/lib/trpc';
+import { useBankingWebSocket } from '@/hooks/useBankingWebSocket';
+import { toast } from 'sonner';
 
 /**
  * Banking Loans Manager - Comprehensive loan management dashboard
@@ -47,6 +49,32 @@ const BankingLoansManager: React.FC = () => {
     status: statusFilter !== 'all' ? statusFilter : undefined,
     riskLevel: riskFilter !== 'all' ? riskFilter : undefined,
     limit: 100,
+  });
+
+  // WebSocket for real-time updates
+  const { isConnected, updates } = useBankingWebSocket({
+    onUpdate: (update) => {
+      // Show toast notification
+      const severity = update.severity;
+      const title = update.updateType === 'margin_call' 
+        ? '⚠️ Margin Call Alert' 
+        : update.updateType === 'ltv_change'
+        ? '📊 LTV Update'
+        : update.updateType === 'valuation'
+        ? '💰 Valuation Update'
+        : 'ℹ️ Status Update';
+      
+      if (severity === 'critical') {
+        toast.error(title, { description: update.message });
+      } else if (severity === 'warning') {
+        toast.warning(title, { description: update.message });
+      } else {
+        toast.info(title, { description: update.message });
+      }
+
+      // Refetch loans to get updated data
+      refetch();
+    },
   });
 
   const formatCurrency = (value: number) => {
@@ -183,6 +211,16 @@ const BankingLoansManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* WebSocket Status */}
+      {isConnected && (
+        <div className="flex items-center justify-end gap-2 text-sm">
+          <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-green-700 font-medium">Live Updates Active</span>
+          </div>
+        </div>
+      )}
+
       {/* Filters and Search */}
       <Card>
         <CardContent className="pt-6">
