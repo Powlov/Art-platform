@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import { trpc } from '@/lib/trpc';
 import BankingLoansManager from '@/components/BankingLoansManager';
+import RiskManagementDashboard from '@/components/RiskManagementDashboard';
 
 /**
  * Bank Partner Portal - Main Dashboard for Bank Partners
@@ -384,16 +385,7 @@ const BankPortal: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="risk">
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Shield className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Управление рисками</h3>
-                <p className="text-gray-600 mb-4">
-                  Мониторинг рисков, настройка порогов, алерты
-                </p>
-                <Button>Открыть панель рисков</Button>
-              </CardContent>
-            </Card>
+            <RiskManagementDashboard />
           </TabsContent>
 
           <TabsContent value="team">
