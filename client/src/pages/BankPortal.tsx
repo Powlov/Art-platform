@@ -17,6 +17,7 @@ import {
   CheckCircle,
   ArrowUpRight,
   ArrowDownRight,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
+import { trpc } from '@/lib/trpc';
+import BankingLoansManager from '@/components/BankingLoansManager';
 
 /**
  * Bank Partner Portal - Main Dashboard for Bank Partners
@@ -32,59 +35,58 @@ import Header from '@/components/Header';
 const BankPortal: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month' | 'year'>('month');
 
-  // Mock data - в production заменить на tRPC API
+  // Fetch real data from tRPC API
+  const { data: bankPartner, isLoading: bankLoading } = trpc.core.getBankPartner.useQuery({});
+  const { data: bankStats, isLoading: statsLoading } = trpc.core.getBankingStatistics.useQuery({
+    period: selectedPeriod,
+  });
+  const { data: loans, isLoading: loansLoading } = trpc.core.getBankingLoans.useQuery({
+    limit: 10,
+  });
+
+  const isLoading = bankLoading || statsLoading || loansLoading;
+
+  // Use real data or fallback to defaults
   const bankInfo = {
-    bankId: 'sberbank-001',
-    bankName: 'Сбербанк',
+    bankId: bankPartner?.bankCode || 'loading',
+    bankName: bankPartner?.bankName || 'Загрузка...',
     status: 'active' as const,
-    connectionStatus: 'connected' as const,
+    connectionStatus: (bankPartner?.connectionStatus || 'connected') as const,
     apiVersion: 'v2.1',
-    lastSync: new Date(),
+    lastSync: bankPartner?.lastSyncAt ? new Date(bankPartner.lastSyncAt) : new Date(),
   };
 
   const stats = {
-    totalLoans: 342,
-    activeLoans: 287,
-    pendingApplications: 18,
-    totalVolume: 1250000000,
-    avgLTV: 64.5,
-    portfolioRisk: 'low' as const,
-    marginCalls: 3,
-    defaultRate: 1.2,
+    totalLoans: bankStats?.totalLoans || 0,
+    activeLoans: bankStats?.activeLoans || 0,
+    pendingApplications: bankStats?.pendingApplications || 0,
+    totalVolume: bankStats?.totalVolume || 0,
+    avgLTV: bankStats?.avgLTV || 0,
+    portfolioRisk: (bankStats?.portfolioRisk || 'low') as const,
+    marginCalls: bankStats?.marginCalls || 0,
+    defaultRate: bankStats?.defaultRate || 0,
   };
 
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'loan_created',
-      description: 'New loan application #LN-2847',
-      artwork: 'Композиция VIII',
-      amount: 15000000,
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    },
-    {
-      id: '2',
-      type: 'ltv_alert',
-      description: 'LTV threshold reached for #LN-2801',
-      artwork: 'Городской пейзаж',
-      ltv: 78.5,
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    },
-    {
-      id: '3',
-      type: 'valuation_update',
-      description: 'Artwork revaluation completed',
-      artwork: 'Абстракция №12',
-      change: 12.5,
-      timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
-    },
-  ];
+  // Recent activity from recent loans
+  const recentActivity = loans?.slice(0, 3).map((loan) => ({
+    id: loan.id?.toString() || '',
+    type: 'loan_created',
+    description: `Займ ${loan.loanId}`,
+    artwork: `Artwork #${loan.artworkId}`,
+    amount: loan.loanAmount || 0,
+    timestamp: loan.createdAt ? new Date(loan.createdAt) : new Date(),
+  })) || [];
 
-  const ltvDistribution = [
-    { range: '0-50%', count: 89, percentage: 31 },
-    { range: '50-65%', count: 142, percentage: 49 },
-    { range: '65-75%', count: 48, percentage: 17 },
-    { range: '75-85%', count: 8, percentage: 3 },
+  // LTV distribution from stats
+  const ltvDistribution = bankStats?.ltvDistribution?.map((item) => ({
+    range: item.range,
+    count: item.count,
+    percentage: stats.activeLoans > 0 ? Math.round((item.count / stats.activeLoans) * 100) : 0,
+  })) || [
+    { range: '0-50%', count: 0, percentage: 0 },
+    { range: '50-65%', count: 0, percentage: 0 },
+    { range: '65-75%', count: 0, percentage: 0 },
+    { range: '75-85%', count: 0, percentage: 0 },
   ];
 
   const formatCurrency = (value: number) => {
@@ -101,6 +103,23 @@ const BankPortal: React.FC = () => {
     if (hours < 24) return `${hours}ч назад`;
     return `${Math.floor(hours / 24)}д назад`;
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">Загрузка данных банковского портала...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -361,16 +380,7 @@ const BankPortal: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="loans">
-            <Card>
-              <CardContent className="p-12 text-center">
-                <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Управление займами</h3>
-                <p className="text-gray-600 mb-4">
-                  Полный список займов, создание новых заявок, управление LTV
-                </p>
-                <Button>Перейти к займам</Button>
-              </CardContent>
-            </Card>
+            <BankingLoansManager />
           </TabsContent>
 
           <TabsContent value="risk">
