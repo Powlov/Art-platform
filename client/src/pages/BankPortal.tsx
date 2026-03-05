@@ -29,6 +29,7 @@ import { trpc } from '@/lib/trpc';
 import BankingLoansManager from '@/components/BankingLoansManager';
 import RiskManagementDashboard from '@/components/RiskManagementDashboard';
 import ApiIntegrationSettings from '@/components/ApiIntegrationSettings';
+import TeamManagement from '@/components/TeamManagement';
 
 /**
  * Bank Partner Portal - Main Dashboard for Bank Partners
@@ -398,16 +399,7 @@ const BankPortal: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="team">
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Управление командой</h3>
-                <p className="text-gray-600 mb-4">
-                  Добавление пользователей, настройка ролей и доступов
-                </p>
-                <Button>Управление командой</Button>
-              </CardContent>
-            </Card>
+            <TeamManagement />
           </TabsContent>
 
           <TabsContent value="reports">
