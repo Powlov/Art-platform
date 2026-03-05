@@ -34,6 +34,7 @@ export default function Login() {
         partner: '/partner/dashboard',
         curator: '/curator/dashboard',
         consultant: '/consultant/dashboard',
+        bank: '/bank-portal',
         user: '/user/dashboard',
         guest: '/guest/dashboard',
       };
@@ -188,6 +189,8 @@ export default function Login() {
                   <div><strong>Пароль:</strong> collector123</div>
                   <div><strong>Gallery:</strong> gallery@artbank.com</div>
                   <div><strong>Пароль:</strong> gallery123</div>
+                  <div><strong>Bank (Сбербанк):</strong> bank@sberbank.ru</div>
+                  <div><strong>Пароль:</strong> bank123456</div>
                 </div>
               </motion.div>
             </form>

@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import bcryptjs from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -6,17 +7,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const db = new Database(path.join(__dirname, 'artbank.db'));
 
-console.log('🌱 Seeding banking data...\n');
+async function seedBanking() {
+  console.log('🌱 Seeding banking data...\n');
 
-const banks = [
-  { email: 'bank@sberbank.ru', name: 'Сбербанк', code: 'SBERBANK', legal: 'ПАО Сбербанк', lic: 'БИК 044525225' },
-  { email: 'bank@vtb.ru', name: 'ВТБ', code: 'VTB', legal: 'ПАО ВТБ', lic: 'БИК 044525187' },
-  { email: 'bank@alfabank.ru', name: 'Альфа-Банк', code: 'ALFABANK', legal: 'АО Альфа-Банк', lic: 'БИК 044525593' },
-  { email: 'bank@tinkoff.ru', name: 'Тинькофф Банк', code: 'TINKOFF', legal: 'АО Тинькофф Банк', lic: 'БИК 044525974' }
-];
+  const banks = [
+    { email: 'bank@sberbank.ru', name: 'Сбербанк', code: 'SBERBANK', legal: 'ПАО Сбербанк', lic: 'БИК 044525225' },
+    { email: 'bank@vtb.ru', name: 'ВТБ', code: 'VTB', legal: 'ПАО ВТБ', lic: 'БИК 044525187' },
+    { email: 'bank@alfabank.ru', name: 'Альфа-Банк', code: 'ALFABANK', legal: 'АО Альфа-Банк', lic: 'БИК 044525593' },
+    { email: 'bank@tinkoff.ru', name: 'Тинькофф Банк', code: 'TINKOFF', legal: 'АО Тинькофф Банк', lic: 'БИК 044525974' }
+  ];
 
-console.log('📦 Creating bank users and partners...');
-const bankPartnerIds = [];
+  console.log('📦 Creating bank users and partners...');
+  const bankPartnerIds = [];
 
 for (const bank of banks) {
   // Check/create user
@@ -24,12 +26,17 @@ for (const bank of banks) {
   let userId;
 
   if (!user) {
-    const r = db.prepare(`INSERT INTO users (email, name, role, password, username, createdAt, updatedAt, lastSignedIn) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(bank.email, bank.name, 'bank', 'bank123456', bank.code.toLowerCase(), Date.now(), Date.now(), Date.now());
+    // Hash password using bcrypt
+    const hashedPassword = await bcryptjs.hash('bank123456', 10);
+    const r = db.prepare(`INSERT INTO users (email, name, role, password, username, createdAt, updatedAt, lastSignedIn) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(bank.email, bank.name, 'bank', hashedPassword, bank.code.toLowerCase(), Date.now(), Date.now(), Date.now());
     userId = r.lastInsertRowid;
     console.log(`  ✅ Created user: ${bank.name} (ID: ${userId})`);
   } else {
     userId = user.id;
-    console.log(`  ℹ️  User exists: ${bank.name} (ID: ${userId})`);
+    // Update existing user with hashed password
+    const hashedPassword = await bcryptjs.hash('bank123456', 10);
+    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashedPassword, userId);
+    console.log(`  ✅ Updated password for: ${bank.name} (ID: ${userId})`);
   }
 
   // Check/create partner
@@ -101,11 +108,19 @@ if (artworks.length === 0) {
   }
 }
 
-console.log('\n✅ Banking data seeded!');
-console.log('\n📊 Summary:');
-console.log(`  - Bank partners: ${bankPartnerIds.length}`);
-console.log(`  - Sample loans: 8`);
-console.log('\n🔐 Login credentials:');
-banks.forEach(b => console.log(`  ${b.email} / bank123456`));
+  console.log('\n✅ Banking data seeded!');
+  console.log('\n📊 Summary:');
+  console.log(`  - Bank partners: ${bankPartnerIds.length}`);
+  console.log(`  - Sample loans: 8`);
+  console.log('\n🔐 Login credentials:');
+  banks.forEach(b => console.log(`  ${b.email} / bank123456`));
 
-db.close();
+  db.close();
+}
+
+// Run the async function
+seedBanking().catch(err => {
+  console.error('❌ Error seeding banking data:', err);
+  db.close();
+  process.exit(1);
+});
