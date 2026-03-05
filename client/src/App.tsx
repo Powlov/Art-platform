@@ -25,6 +25,7 @@ const PartnerDashboard = lazy(() => import("./pages/dashboards/EnhancedPartnerDa
 const ConsultantDashboard = lazy(() => import("./pages/dashboards/EnhancedConsultantDashboard"));
 const GuestDashboard = lazy(() => import("./pages/dashboards/GuestDashboard"));
 const BankPortal = lazy(() => import("./pages/BankPortal"));
+const LoanApplicationFlow = lazy(() => import("./components/LoanApplicationFlow"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const ArtworkDetails = lazy(() => import("./pages/ArtworkDetails"));
 const Auctions = lazy(() => import("./pages/Auctions"));
@@ -135,6 +136,7 @@ function Router() {
         <Route path={"/profile"} component={Profile} />
         <Route path={"/wallet"} component={Wallet} />
         <Route path={"/bank-portal"} component={BankPortal} />
+        <Route path={"/loan-application"} component={LoanApplicationFlow} />
         <Route path={"/rfq"} component={RFQSystem} />
         <Route path={"/crowdfunding"} component={Crowdfunding} />
         <Route path={"/art-credit"} component={ArtCredit} />
