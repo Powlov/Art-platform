@@ -31,6 +31,7 @@ import RiskManagementDashboard from '@/components/RiskManagementDashboard';
 import ApiIntegrationSettings from '@/components/ApiIntegrationSettings';
 import TeamManagement from '@/components/TeamManagement';
 import ReportsAnalytics from '@/components/ReportsAnalytics';
+import ArtDnaPassport from '@/components/ArtDnaPassport';
 
 /**
  * Bank Partner Portal - Main Dashboard for Bank Partners
@@ -247,7 +248,7 @@ const BankPortal: React.FC = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto">
             <TabsTrigger value="overview">
               <BarChart3 className="w-4 h-4 mr-2" />
               Обзор
@@ -259,6 +260,10 @@ const BankPortal: React.FC = () => {
             <TabsTrigger value="risk">
               <Shield className="w-4 h-4 mr-2" />
               Риски
+            </TabsTrigger>
+            <TabsTrigger value="artdna">
+              <Shield className="w-4 h-4 mr-2" />
+              Art-DNA
             </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
@@ -393,6 +398,10 @@ const BankPortal: React.FC = () => {
 
           <TabsContent value="risk">
             <RiskManagementDashboard />
+          </TabsContent>
+
+          <TabsContent value="artdna">
+            <ArtDnaPassport />
           </TabsContent>
 
           <TabsContent value="settings">
