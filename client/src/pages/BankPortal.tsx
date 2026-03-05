@@ -28,6 +28,7 @@ import Header from '@/components/Header';
 import { trpc } from '@/lib/trpc';
 import BankingLoansManager from '@/components/BankingLoansManager';
 import RiskManagementDashboard from '@/components/RiskManagementDashboard';
+import ApiIntegrationSettings from '@/components/ApiIntegrationSettings';
 
 /**
  * Bank Partner Portal - Main Dashboard for Bank Partners
@@ -257,6 +258,10 @@ const BankPortal: React.FC = () => {
               <Shield className="w-4 h-4 mr-2" />
               Риски
             </TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-2" />
+              API
+            </TabsTrigger>
             <TabsTrigger value="team">
               <Users className="w-4 h-4 mr-2" />
               Команда
@@ -386,6 +391,10 @@ const BankPortal: React.FC = () => {
 
           <TabsContent value="risk">
             <RiskManagementDashboard />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <ApiIntegrationSettings bankPartner={bankPartnerData} />
           </TabsContent>
 
           <TabsContent value="team">
