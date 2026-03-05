@@ -30,6 +30,7 @@ import BankingLoansManager from '@/components/BankingLoansManager';
 import RiskManagementDashboard from '@/components/RiskManagementDashboard';
 import ApiIntegrationSettings from '@/components/ApiIntegrationSettings';
 import TeamManagement from '@/components/TeamManagement';
+import ReportsAnalytics from '@/components/ReportsAnalytics';
 
 /**
  * Bank Partner Portal - Main Dashboard for Bank Partners
@@ -403,16 +404,7 @@ const BankPortal: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="reports">
-            <Card>
-              <CardContent className="p-12 text-center">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Отчеты и аналитика</h3>
-                <p className="text-gray-600 mb-4">
-                  Генерация отчетов, экспорт данных, аналитика портфеля
-                </p>
-                <Button>Создать отчет</Button>
-              </CardContent>
-            </Card>
+            <ReportsAnalytics />
           </TabsContent>
         </Tabs>
       </div>
