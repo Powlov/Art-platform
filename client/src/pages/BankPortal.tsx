@@ -33,6 +33,7 @@ import TeamManagement from '@/components/TeamManagement';
 import ReportsAnalytics from '@/components/ReportsAnalytics';
 import ArtDnaPassport from '@/components/ArtDnaPassport';
 import AiPriceCorridor from '@/components/AiPriceCorridor';
+import WhiteLabelWidget from '@/components/WhiteLabelWidget';
 
 /**
  * Bank Partner Portal - Main Dashboard for Bank Partners
@@ -249,7 +250,7 @@ const BankPortal: React.FC = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-9 lg:w-auto">
             <TabsTrigger value="overview">
               <BarChart3 className="w-4 h-4 mr-2" />
               Обзор
@@ -269,6 +270,10 @@ const BankPortal: React.FC = () => {
             <TabsTrigger value="pricing">
               <TrendingUp className="w-4 h-4 mr-2" />
               AI Pricing
+            </TabsTrigger>
+            <TabsTrigger value="widgets">
+              <Activity className="w-4 h-4 mr-2" />
+              Widgets
             </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
@@ -411,6 +416,10 @@ const BankPortal: React.FC = () => {
 
           <TabsContent value="pricing">
             <AiPriceCorridor />
+          </TabsContent>
+
+          <TabsContent value="widgets">
+            <WhiteLabelWidget />
           </TabsContent>
 
           <TabsContent value="settings">
