@@ -106,26 +106,6 @@ const NetworkGraphVisualization: React.FC = () => {
       setGraphData({ nodes, edges });
     }
   }, [graphNodes]);
-        { source: 'collector-001', target: 'artwork-001', type: 'ownership', verified: true },
-        { source: 'artist-002', target: 'artwork-002', type: 'authentication', verified: true },
-        { source: 'artwork-002', target: 'gallery-002', type: 'exhibition', verified: true },
-        { source: 'artist-003', target: 'artwork-003', type: 'authentication', verified: true },
-        { source: 'artwork-003', target: 'gallery-003', type: 'exhibition', verified: true },
-        { source: 'collector-002', target: 'artwork-003', type: 'ownership', verified: true },
-        { source: 'artwork-001', target: 'artwork-002', type: 'provenance', verified: true },
-      ],
-    };
-
-    // Initialize node positions
-    mockData.nodes.forEach((node, i) => {
-      node.x = Math.random() * 600 + 100;
-      node.y = Math.random() * 400 + 100;
-      node.vx = 0;
-      node.vy = 0;
-    });
-
-    // Data loaded from API, no longer needed
-  }, [graphNodes]);
 
   // Force-directed graph simulation
   useEffect(() => {
