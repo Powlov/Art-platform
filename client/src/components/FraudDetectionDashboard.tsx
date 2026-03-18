@@ -133,68 +133,6 @@ const FraudDetectionDashboard: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [autoRefresh, refetch]);
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        status: 'active',
-      },
-      {
-        id: 'alert-002',
-        type: 'price_manipulation',
-        severity: 'high',
-        artworkId: 'artwork-456',
-        artworkTitle: 'Городской пейзаж',
-        description: 'Резкое завышение цены на 350% за последние 7 дней',
-        evidence: [
-          { type: 'Price Spike', value: '+350% in 7 days', confidence: 97 },
-          { type: 'Low Volume', value: 'Only 2 transactions', confidence: 85 },
-          { type: 'No Market Event', value: 'No justification found', confidence: 78 },
-        ],
-        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-        status: 'investigating',
-        assignedTo: 'Fraud Team A',
-      },
-      {
-        id: 'alert-003',
-        type: 'rapid_trades',
-        severity: 'medium',
-        artworkId: 'artwork-789',
-        artworkTitle: 'Портрет неизвестной',
-        description: '8 сделок за последние 15 дней (threshold: 5)',
-        evidence: [
-          { type: 'Trade Count', value: '8 trades in 15 days', confidence: 100 },
-          { type: 'Different Buyers', value: '6 unique parties', confidence: 90 },
-        ],
-        timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
-        status: 'active',
-      },
-      {
-        id: 'alert-004',
-        type: 'fake_provenance',
-        severity: 'high',
-        artworkId: 'artwork-234',
-        artworkTitle: 'Натюрморт с фруктами',
-        description: 'Подозрение на подделку документов о происхождении',
-        evidence: [
-          { type: 'Document Inconsistency', value: 'Date mismatch found', confidence: 82 },
-          { type: 'Missing Signatures', value: '2 signatures missing', confidence: 95 },
-          { type: 'Unverified Gallery', value: 'Gallery not in database', confidence: 70 },
-        ],
-        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        status: 'investigating',
-        assignedTo: 'Fraud Team B',
-      },
-    ];
-
-    const mockStats: FraudStats = {
-      totalAlerts: 234,
-      activeAlerts: 12,
-      resolvedToday: 8,
-      falsePositiveRate: 3.2,
-      avgResponseTime: 4.5,
-      criticalAlerts: 2,
-    };
-
-    // Data now loaded from API
-  }, [fraudAlerts]);
 
   // Notification effect for new critical alerts
   useEffect(() => {
